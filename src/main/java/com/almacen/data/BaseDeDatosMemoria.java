@@ -30,6 +30,8 @@ public class BaseDeDatosMemoria {
                 new Producto(2L, "Mouse", "Mouse Inalámbrico", 50, new BigDecimal("20.00"), LocalDateTime.now(), cat1));
         productos.add(
                 new Producto(3L, "Silla", "Silla de Oficina", 15, new BigDecimal("100.00"), LocalDateTime.now(), cat2));
+
+        cargarDatos();
     }
 
     public static Usuario buscarUsuario(String username, String password) {
@@ -48,5 +50,63 @@ public class BaseDeDatosMemoria {
             }
         }
         return null;
+    }
+
+    // base de datos provicional
+
+    private static String ARCHIVO_PRODUCTOS = "productos.txt";
+
+    public static void guardarCambios() {
+        try (java.io.BufferedWriter writer = new java.io.BufferedWriter(new java.io.FileWriter(ARCHIVO_PRODUCTOS))) {
+            for (Producto p : productos) {
+                String linea = String.format("%d;%s;%s;%d;%s;%d",
+                        p.getId(),
+                        p.getNombre(),
+                        p.getDescripcion(),
+                        p.getCantidad(),
+                        p.getPrecio_unitario().toString(),
+                        p.getCategoria().getId());
+                writer.write(linea);
+                writer.newLine();
+            }
+        } catch (java.io.IOException e) {
+            System.out.println("Error al guardar los datos: " + e.getMessage());
+        }
+    }
+
+    public static void cargarDatos() {
+        java.io.File archivo = new java.io.File(ARCHIVO_PRODUCTOS);
+        if (!archivo.exists())
+            return;
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(archivo))) {
+            String linea;
+
+            while ((linea = reader.readLine()) != null) {
+                String[] partes = linea.split(";");
+                if (partes.length >= 6) {
+                    Producto p = new Producto();
+                    p.setId(Long.parseLong(partes[0]));
+                    p.setNombre(partes[1]);
+                    p.setDescripcion(partes[2]);
+                    p.setCantidad(Integer.parseInt(partes[3]));
+                    p.setPrecio_unitario(new BigDecimal(partes[4]));
+                    p.setFecha_registro(LocalDateTime.now());
+
+                    Long catId = Long.parseLong(partes[5]);
+                    Categoria cat = categorias.stream()
+                            .filter(c -> c.getId().equals(catId)).findFirst().orElse(null);
+                    p.setCategoria(cat);
+
+                    boolean existe = productos.stream().anyMatch(existing -> existing.getId().equals(p.getId()));
+                    if (!existe) {
+                        productos.add(p);
+                    }
+                }
+            }
+        } catch (java.io.IOException e) {
+            System.out.println("Error al leer los datos: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.out.println("Error en el formato de los datos: " + e.getMessage());
+        }
     }
 }

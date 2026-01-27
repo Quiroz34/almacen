@@ -146,6 +146,7 @@ public class Main {
                 nuevo.setCategoria(catSeleccionada);
 
                 BaseDeDatosMemoria.productos.add(nuevo);
+                BaseDeDatosMemoria.guardarCambios();
                 System.out.println("Producto agregado exitosamente.");
             } else {
                 System.out.println("Categoría no válida.");
@@ -211,6 +212,7 @@ public class Main {
             mov.setUsuario(usuarioLogueado);
 
             BaseDeDatosMemoria.movimientos.add(mov);
+            BaseDeDatosMemoria.guardarCambios();
             System.out.println("Movimiento registrado. Nuevo stock: " + p.getCantidad());
         } catch (NumberFormatException e) {
             System.out.println("Error: Debe ingresar un número válido.");
