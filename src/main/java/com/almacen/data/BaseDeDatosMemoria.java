@@ -52,7 +52,7 @@ public class BaseDeDatosMemoria {
         return null;
     }
 
-    // base de datos provicional
+    // base de datos provisional
 
     private static String ARCHIVO_PRODUCTOS = "productos.txt";
 
