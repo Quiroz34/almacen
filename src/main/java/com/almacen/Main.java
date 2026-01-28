@@ -57,6 +57,8 @@ public class Main {
         System.out.println("1. Listar Productos");
         if ("ADMIN".equals(usuarioLogueado.getRol())) {
             System.out.println("2. Agregar Producto");
+            System.out.println("6. Editar Producto");
+            System.out.println("7. Eliminar Producto");
         }
         System.out.println("3. Registrar Movimiento");
         System.out.println("4. Ver Reporte de Inventario");
@@ -76,7 +78,16 @@ public class Main {
                 if ("ADMIN".equals(usuarioLogueado.getRol())) {
                     agregarProducto();
                 } else {
-                    System.out.println("Opción no válida.");
+                }
+                break;
+            case "6":
+                if ("ADMIN".equals(usuarioLogueado.getRol())) {
+                    editarProducto();
+                }
+                break;
+            case "7":
+                if ("ADMIN".equals(usuarioLogueado.getRol())) {
+                    eliminarProducto();
                 }
                 break;
             case "3":
@@ -239,5 +250,81 @@ public class Main {
         }
         System.out.println("---------------------------------------------------------------");
         System.out.printf("VALOR TOTAL DEL INVENTARIO: %30.2f%n", granTotal);
+    }
+
+    // editar y eliminar productos
+
+    private static void editarProducto() {
+        System.out.println("\n--- EDITAR PRODUCTO ---");
+        listarProductos();
+        System.out.print("Ingrese el ID del producto que desea editar: ");
+
+        if (!scanner.hasNextLine())
+            return;
+        try {
+            Long id = Long.parseLong(scanner.nextLine());
+            Producto p = BaseDeDatosMemoria.buscarProductoPorId(id);
+
+            if (p != null) {
+                System.out.println("Nombre actual: " + p.getNombre());
+                System.out.print("Nuevo nombre (Enter para mantener): ");
+                String nuevoNombre = scanner.nextLine();
+                if (!nuevoNombre.isEmpty()) {
+                    p.setNombre(nuevoNombre);
+                }
+
+                System.out.println("Descripción actual: " + p.getDescripcion());
+                System.out.print("Nueva descripción (Enter para mantener): ");
+                String nuevaDesc = scanner.nextLine();
+                if (!nuevaDesc.isEmpty()) {
+                    p.setDescripcion(nuevaDesc);
+                }
+
+                System.out.println("Precio actual: " + p.getPrecio_unitario());
+                System.out.print("Nuevo precio (Enter para mantener): ");
+                String nuevoPrecioStr = scanner.nextLine();
+                if (!nuevoPrecioStr.isEmpty()) {
+                    p.setPrecio_unitario(new BigDecimal(nuevoPrecioStr));
+                }
+
+                BaseDeDatosMemoria.guardarCambios();
+                System.out.println("El roducto se actualizo correctamente.");
+            } else {
+                System.out.println("Producto no encontrado.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Error: ID no valido.");
+        }
+    }
+
+    private static void eliminarProducto() {
+        System.out.println("\n--- ELIMINAR PRODUCTO ---");
+        listarProductos();
+        System.out.print("Ingresa el ID del producto a eliminar: ");
+
+        if (!scanner.hasNextLine())
+            return;
+        try {
+            Long id = Long.parseLong(scanner.nextLine());
+            Producto p = BaseDeDatosMemoria.buscarProductoPorId(id);
+
+            if (p != null) {
+                System.out.println("Eliminar permanentemente: " + p.getNombre());
+                System.out.print("¿Está seguro? (S/N): ");
+                String confirma = scanner.nextLine();
+
+                if (confirma.equalsIgnoreCase("S")) {
+                    BaseDeDatosMemoria.productos.remove(p);
+                    BaseDeDatosMemoria.guardarCambios();
+                    System.out.println("Producto eliminado.");
+                } else {
+                    System.out.println("Cancelada.");
+                }
+            } else {
+                System.out.println("No se encontro ese producto con ese ID.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Error: ID no valido.");
+        }
     }
 }

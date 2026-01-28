@@ -24,12 +24,19 @@ public class BaseDeDatosMemoria {
         categorias.add(cat1);
         categorias.add(cat2);
 
-        productos.add(
-                new Producto(1L, "Laptop", "Laptop Dell", 10, new BigDecimal("1500.00"), LocalDateTime.now(), cat1));
-        productos.add(
-                new Producto(2L, "Mouse", "Mouse Inalámbrico", 50, new BigDecimal("20.00"), LocalDateTime.now(), cat1));
-        productos.add(
-                new Producto(3L, "Silla", "Silla de Oficina", 15, new BigDecimal("100.00"), LocalDateTime.now(), cat2));
+        // Solo agregamos datos de prueba si NO existe el archivo
+        java.io.File archivo = new java.io.File(ARCHIVO_PRODUCTOS);
+        if (!archivo.exists()) {
+            productos.add(
+                    new Producto(1L, "Laptop", "Laptop Dell", 10, new BigDecimal("1500.00"), LocalDateTime.now(),
+                            cat1));
+            productos.add(
+                    new Producto(2L, "Mouse", "Mouse Inalámbrico", 50, new BigDecimal("20.00"), LocalDateTime.now(),
+                            cat1));
+            productos.add(
+                    new Producto(3L, "Silla", "Silla de Oficina", 15, new BigDecimal("100.00"), LocalDateTime.now(),
+                            cat2));
+        }
 
         cargarDatos();
     }
@@ -52,7 +59,7 @@ public class BaseDeDatosMemoria {
         return null;
     }
 
-    // base de datos provisional
+    // base de datos provisional para productos
 
     private static String ARCHIVO_PRODUCTOS = "productos.txt";
 
