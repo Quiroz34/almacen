@@ -2,7 +2,6 @@ package com.almacen;
 
 import com.almacen.data.BaseDeDatosMemoria;
 import com.almacen.model.Categoria;
-import com.almacen.model.Movimiento;
 import com.almacen.model.Producto;
 import com.almacen.model.Usuario;
 import java.math.BigDecimal;
@@ -55,14 +54,17 @@ public class Main {
     private static void menuPrincipal() {
         System.out.println("\n--- MENÚ PRINCIPAL ---");
         System.out.println("1. Listar Productos");
+        System.out.println("2. Registrar Movimiento");
+        System.out.println("3. Ver Reporte de Inventario");
+
         if ("ADMIN".equals(usuarioLogueado.getRol())) {
-            System.out.println("2. Agregar Producto");
-            System.out.println("6. Editar Producto");
-            System.out.println("7. Eliminar Producto");
+            System.out.println("4. Agregar Producto");
+            System.out.println("5. Editar Producto");
+            System.out.println("6. Eliminar Producto");
+            System.out.println("7. Gestionar Categorías");
+            System.out.println("8. Gestionar Usuarios");
         }
-        System.out.println("3. Registrar Movimiento");
-        System.out.println("4. Ver Reporte de Inventario");
-        System.out.println("5. Salir");
+        System.out.println("9. Salir");
         System.out.print("Opción: ");
 
         if (!scanner.hasNextLine()) {
@@ -75,28 +77,37 @@ public class Main {
                 listarProductos();
                 break;
             case "2":
+                registrarMovimiento();
+                break;
+            case "3":
+                verReporte();
+                break;
+            case "4":
                 if ("ADMIN".equals(usuarioLogueado.getRol())) {
                     agregarProducto();
-                } else {
                 }
                 break;
-            case "6":
+            case "5":
                 if ("ADMIN".equals(usuarioLogueado.getRol())) {
                     editarProducto();
                 }
                 break;
-            case "7":
+            case "6":
                 if ("ADMIN".equals(usuarioLogueado.getRol())) {
                     eliminarProducto();
                 }
                 break;
-            case "3":
-                registrarMovimiento();
+            case "7":
+                if ("ADMIN".equals(usuarioLogueado.getRol())) {
+                    gestionarCategorias();
+                }
                 break;
-            case "4":
-                verReporte();
+            case "8":
+                if ("ADMIN".equals(usuarioLogueado.getRol())) {
+                    gestionarUsuarios();
+                }
                 break;
-            case "5":
+            case "9":
                 usuarioLogueado = null;
                 System.out.println("Sesión cerrada.");
                 break;
@@ -137,9 +148,7 @@ public class Main {
             BigDecimal precio = new BigDecimal(scanner.nextLine());
 
             System.out.println("Seleccione Categoría (ID):");
-            for (Categoria c : BaseDeDatosMemoria.categorias) {
-                System.out.println(c.getId() + ". " + c.getNombre());
-            }
+            listarCategorias();
             if (!scanner.hasNextLine())
                 return;
             Long catId = Long.parseLong(scanner.nextLine());
@@ -205,24 +214,13 @@ public class Main {
                     return;
                 }
                 p.setCantidad(p.getCantidad() - cantidad);
-                tipo = "SALIDA";
             } else if ("E".equals(tipo)) {
                 p.setCantidad(p.getCantidad() + cantidad);
-                tipo = "ENTRADA";
             } else {
                 System.out.println("Tipo de movimiento no válido.");
                 return;
             }
 
-            Movimiento mov = new Movimiento();
-            mov.setId((long) (BaseDeDatosMemoria.movimientos.size() + 1));
-            mov.setProducto(p);
-            mov.setTipo_movimiento(tipo);
-            mov.setCantidad(cantidad);
-            mov.setFecha_movimiento(LocalDateTime.now());
-            mov.setUsuario(usuarioLogueado);
-
-            BaseDeDatosMemoria.movimientos.add(mov);
             BaseDeDatosMemoria.guardarCambios();
             System.out.println("Movimiento registrado. Nuevo stock: " + p.getCantidad());
         } catch (NumberFormatException e) {
@@ -284,11 +282,36 @@ public class Main {
                 System.out.print("Nuevo precio (Enter para mantener): ");
                 String nuevoPrecioStr = scanner.nextLine();
                 if (!nuevoPrecioStr.isEmpty()) {
-                    p.setPrecio_unitario(new BigDecimal(nuevoPrecioStr));
+                    try {
+                        p.setPrecio_unitario(new BigDecimal(nuevoPrecioStr));
+                    } catch (NumberFormatException e) {
+                        System.out.println("Error: Precio inválido. No se actualizó el precio.");
+                    }
+                }
+
+                System.out.println("Categoría actual: " + p.getCategoria().getNombre());
+                System.out.println("Seleccione nueva Categoría (ID) (Enter para mantener):");
+                listarCategorias();
+                if (scanner.hasNextLine()) {
+                    String nuevaCatStr = scanner.nextLine();
+                    if (!nuevaCatStr.isEmpty()) {
+                        try {
+                            Long newCatId = Long.parseLong(nuevaCatStr);
+                            Categoria newCat = BaseDeDatosMemoria.categorias.stream()
+                                    .filter(c -> c.getId().equals(newCatId)).findFirst().orElse(null);
+                            if (newCat != null) {
+                                p.setCategoria(newCat);
+                            } else {
+                                System.out.println("Categoría no encontrada. No se actualizó la categoría.");
+                            }
+                        } catch (NumberFormatException e) {
+                            System.out.println("ID inválido. No se actualizó la categoría.");
+                        }
+                    }
                 }
 
                 BaseDeDatosMemoria.guardarCambios();
-                System.out.println("El roducto se actualizo correctamente.");
+                System.out.println("El producto se actualizó correctamente.");
             } else {
                 System.out.println("Producto no encontrado.");
             }
@@ -325,6 +348,261 @@ public class Main {
             }
         } catch (NumberFormatException e) {
             System.out.println("Error: ID no valido.");
+        }
+    }
+
+    private static void gestionarUsuarios() {
+        while (true) {
+            System.out.println("\n--- GESTIÓN DE USUARIOS ---");
+            System.out.println("1. Listar Usuarios");
+            System.out.println("2. Agregar Usuario");
+            System.out.println("3. Editar Usuario");
+            System.out.println("4. Eliminar Usuario");
+            System.out.println("5. Volver al Menú Principal");
+            System.out.print("Opción: ");
+
+            if (!scanner.hasNextLine())
+                return;
+            String opcion = scanner.nextLine();
+
+            switch (opcion) {
+                case "1":
+                    listarUsuarios();
+                    break;
+                case "2":
+                    agregarUsuario();
+                    break;
+                case "3":
+                    editarUsuario();
+                    break;
+                case "4":
+                    eliminarUsuario();
+                    break;
+                case "5":
+                    return;
+                default:
+                    System.out.println("Opción no válida.");
+            }
+        }
+    }
+
+    private static void listarUsuarios() {
+        System.out.println("\n--- LISTA DE USUARIOS ---");
+        System.out.printf("%-5s %-15s %-10s%n", "ID", "Username", "Rol");
+        for (Usuario u : BaseDeDatosMemoria.usuarios) {
+            System.out.printf("%-5d %-15s %-10s%n",
+                    u.getId(),
+                    u.getUsername(),
+                    u.getRol());
+        }
+    }
+
+    private static void agregarUsuario() {
+        System.out.println("\n--- AGREGAR USUARIO ---");
+        System.out.print("Username: ");
+        if (!scanner.hasNextLine())
+            return;
+        String username = scanner.nextLine();
+
+        if (BaseDeDatosMemoria.usuarios.stream().anyMatch(u -> u.getUsername().equalsIgnoreCase(username))) {
+            System.out.println("Error: El usuario ya existe.");
+            return;
+        }
+
+        System.out.print("Password: ");
+        if (!scanner.hasNextLine())
+            return;
+        String password = scanner.nextLine();
+
+        System.out.print("Rol (ADMIN/USER): ");
+        if (!scanner.hasNextLine())
+            return;
+        String rol = scanner.nextLine().toUpperCase();
+
+        if (!rol.equals("ADMIN") && !rol.equals("USER")) {
+            System.out.println("Rol inválido. Se asignará USER por defecto.");
+            rol = "USER";
+        }
+
+        Usuario nuevo = new Usuario();
+        long maxId = BaseDeDatosMemoria.usuarios.stream().mapToLong(Usuario::getId).max().orElse(0);
+        nuevo.setId(maxId + 1);
+        nuevo.setUsername(username);
+        nuevo.setPassword(password);
+        nuevo.setRol(rol);
+
+        BaseDeDatosMemoria.agregarUsuario(nuevo);
+        System.out.println("Usuario agregado exitosamente.");
+    }
+
+    private static void editarUsuario() {
+        System.out.println("\n--- EDITAR USUARIO ---");
+        listarUsuarios();
+        System.out.print("Ingrese ID del usuario a editar: ");
+        if (!scanner.hasNextLine())
+            return;
+
+        try {
+            Long id = Long.parseLong(scanner.nextLine());
+            Usuario u = BaseDeDatosMemoria.buscarUsuarioPorId(id);
+
+            if (u != null) {
+                System.out.println("Editando usuario: " + u.getUsername());
+
+                System.out.print("Nuevo Password (Enter para mantener): ");
+                String newPass = scanner.nextLine();
+                if (!newPass.isEmpty()) {
+                    u.setPassword(newPass);
+                }
+
+                System.out.print("Nuevo Rol (ADMIN/USER) (Enter para mantener): ");
+                String newRol = scanner.nextLine().toUpperCase();
+                if (!newRol.isEmpty()) {
+                    if (newRol.equals("ADMIN") || newRol.equals("USER")) {
+                        u.setRol(newRol);
+                    } else {
+                        System.out.println("Rol inválido, se mantiene el actual.");
+                    }
+                }
+
+                BaseDeDatosMemoria.actualizarUsuario(u);
+                System.out.println("Usuario actualizado.");
+            } else {
+                System.out.println("Usuario no encontrado.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("ID inválido.");
+        }
+    }
+
+    private static void eliminarUsuario() {
+        System.out.println("\n--- ELIMINAR USUARIO ---");
+        listarUsuarios();
+        System.out.print("Ingrese ID del usuario a eliminar: ");
+        if (!scanner.hasNextLine())
+            return;
+
+        try {
+            Long id = Long.parseLong(scanner.nextLine());
+            Usuario u = BaseDeDatosMemoria.buscarUsuarioPorId(id);
+
+            if (u != null) {
+                if (u.getId().equals(usuarioLogueado.getId())) {
+                    System.out.println("No puedes eliminar tu propio usuario mientras estás logueado.");
+                    return;
+                }
+
+                System.out.print("¿Seguro que desea eliminar a " + u.getUsername() + "? (S/N): ");
+                String resp = scanner.nextLine();
+                if (resp.equalsIgnoreCase("S")) {
+                    BaseDeDatosMemoria.eliminarUsuario(u);
+                    System.out.println("Usuario eliminado.");
+                }
+            } else {
+                System.out.println("Usuario no encontrado.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("ID inválido.");
+        }
+    }
+
+    private static void gestionarCategorias() {
+        while (true) {
+            System.out.println("\n--- GESTIÓN DE CATEGORÍAS ---");
+            System.out.println("1. Listar Categorías");
+            System.out.println("2. Agregar Categoría");
+            System.out.println("3. Eliminar Categoría");
+            System.out.println("4. Volver al Menú Principal");
+            System.out.print("Opción: ");
+
+            if (!scanner.hasNextLine())
+                return;
+            String opcion = scanner.nextLine();
+
+            switch (opcion) {
+                case "1":
+                    listarCategorias();
+                    break;
+                case "2":
+                    agregarCategoria();
+                    break;
+                case "3":
+                    eliminarCategoria();
+                    break;
+                case "4":
+                    return;
+                default:
+                    System.out.println("Opción no válida.");
+            }
+        }
+    }
+
+    private static void listarCategorias() {
+        System.out.println("\n--- LISTA DE CATEGORÍAS ---");
+        if (BaseDeDatosMemoria.categorias.isEmpty()) {
+            System.out.println("No hay categorías registradas.");
+        } else {
+            for (Categoria c : BaseDeDatosMemoria.categorias) {
+                System.out.println(c.getId() + ". " + c.getNombre());
+            }
+        }
+    }
+
+    private static void agregarCategoria() {
+        System.out.println("\n--- AGREGAR CATEGORÍA ---");
+        System.out.print("Nombre de la categoría: ");
+        if (!scanner.hasNextLine())
+            return;
+        String nombre = scanner.nextLine();
+
+        if (nombre.isEmpty()) {
+            System.out.println("El nombre no puede estar vacío.");
+            return;
+        }
+
+        if (BaseDeDatosMemoria.categorias.stream().anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre))) {
+            System.out.println("Error: Ya existe una categoría con ese nombre.");
+            return;
+        }
+
+        long maxId = BaseDeDatosMemoria.categorias.stream().mapToLong(Categoria::getId).max().orElse(0);
+        Categoria nueva = new Categoria(maxId + 1, nombre);
+        BaseDeDatosMemoria.agregarCategoria(nueva);
+        System.out.println("Categoría agregada exitosamente.");
+    }
+
+    private static void eliminarCategoria() {
+        System.out.println("\n--- ELIMINAR CATEGORÍA ---");
+        listarCategorias();
+        System.out.print("Ingrese ID de la categoría a eliminar: ");
+        if (!scanner.hasNextLine())
+            return;
+
+        try {
+            Long id = Long.parseLong(scanner.nextLine());
+            Categoria c = BaseDeDatosMemoria.buscarCategoriaPorId(id);
+
+            if (c != null) {
+                boolean enUso = BaseDeDatosMemoria.productos.stream()
+                        .anyMatch(p -> p.getCategoria().getId().equals(c.getId()));
+
+                if (enUso) {
+                    System.out
+                            .println("Error: No se puede eliminar la categoría porque hay productos asociados a ella.");
+                    return;
+                }
+
+                System.out.print("¿Seguro que desea eliminar '" + c.getNombre() + "'? (S/N): ");
+                String resp = scanner.nextLine();
+                if (resp.equalsIgnoreCase("S")) {
+                    BaseDeDatosMemoria.eliminarCategoria(c);
+                    System.out.println("Categoría eliminada.");
+                }
+            } else {
+                System.out.println("Categoría no encontrada.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("ID inválido.");
         }
     }
 }
